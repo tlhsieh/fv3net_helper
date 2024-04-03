@@ -56,4 +56,12 @@ def coarse_grain(data4d, factor=1):
         
     return da
 
+def latlon(da, lat, lon, lims=[]):
+    """select a lat-lon box on the native grid"""
 
+    if len(lims) == 0:
+        lims = [lat.min(), lat.max(), lon.min(), lon.max()]
+
+    da = da.where(lims[0] < lat).where(lat < lims[1]).where(lims[2] < lon).where(lon < lims[3])
+
+    return da
