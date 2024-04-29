@@ -2,7 +2,6 @@
 bash
 module load python/3.9
 source activate fv3net-prognostic-run
-python
 """
 
 import numpy as np

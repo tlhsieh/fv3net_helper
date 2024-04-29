@@ -1,11 +1,13 @@
 """
+bash
+module load python/3.9
 source activate fv3net-image
 """
 
 ##### from workflows/diagnostics/fv3net/diagnostics/offline/compute.py
 import argparse
 import json
-# import logging
+import logging
 import os
 import sys
 from tempfile import NamedTemporaryFile
@@ -39,16 +41,24 @@ TARGET_COORD = "target"
 ##### a hack to make the code run
 from fv3net.diagnostics.offline.compute import get_prediction, load_grid_info, _compute_diagnostics, plot_input_sensitivity, _get_data_mapper_if_exists, select_snapshot, is_3d, insert_column_integrated_vars, _get_transect, _write_nc, _add_derived_diagnostics
 
+root = '/ncrc/home2/Tsung-Lin.Hsieh/nudge-to-fine-stellar-workflow'
+expr_root = '/gpfs/f5/gfdl_w/scratch/Tsung-Lin.Hsieh/C384'
+res = 'c384'
+
+# root = '/home/hsiehtl/nudge-to-fine-stellar-workflow'
+# expr_root = '/scratch/cimes/hsiehtl/C48'
+# res = 'c48'
+
 class args: # this is a hack to replace the parser
-    evaluation_grid = 'c48'
-    data_yaml = '/home/hsiehtl/nudge-to-fine-stellar-workflow/configs/machine-learning/tq-testing-data.yaml'
-    catalog_path = '/home/hsiehtl/nudge-to-fine-stellar-workflow/configs/catalog.yaml'
-    model_path = '/scratch/cimes/hsiehtl/C48/models/tq-model'
-    output_path = '/scratch/cimes/hsiehtl/C48/offline/test/tq-model' # to be updated
+    evaluation_grid = res
+    data_yaml = f'{root}/configs/machine-learning/tq-testing-data_predict.yaml'
+    catalog_path = f'{root}/configs/catalog.yaml'
+    model_path = f'{expr_root}/models_C384_subsampleRatio0p0009765625/tq-model' #i
+    output_path = f'{expr_root}/offline/test/tq-model' #i
     n_jobs = -1
     snapshot_time = None
 ########################################
-
+    
 ##### from workflows/diagnostics/fv3net/diagnostics/offline/compute.py
 # logger.info("Starting diagnostics routine.")
 
@@ -110,8 +120,8 @@ target = safe.get_variables(
     ds.sel({DERIVATION_DIM_NAME: TARGET_COORD}), full_predicted_vars
 )
 
-prediction.to_netcdf("prediction.nc")
-target.to_netcdf("target.nc")
+# prediction.to_netcdf("prediction.nc")
+# target.to_netcdf("target.nc")
 ########################################
 
 ##### plot maps
@@ -121,21 +131,30 @@ from helper import coarse_grain, latlon, crop
 def box(da):
     return latlon(da, lat, lon, lims)
 
-ds_land = xr.open_zarr('/scratch/cimes/hsiehtl/C48/simulations/nudged/sfc_dt_atmos.zarr') # for land_mask
+ds_land = xr.open_zarr(f'{expr_root}/simulations/nudged/sfc_dt_atmos.zarr') # for land_mask
 
 # itile = 2; lims = [42, 52, -127, -117] # PNW # to compare the ratio between two mountains
-itile = 2; lims = [42, 62, -135, -115] # PNW+
+# itile = 2; lims = [42, 62, -135, -115] # PNW+
 # itile = 4; lims = [34, 42, -124, -117] # CA-NV # to compare the first 5 days
-# itile = 4; lims = [12, 42, -134, -104] # CA-NV+
+itile = 4; lims = [12, 42, -134, -104] # CA-NV+
 
-lat = ds_land['lat'].isel(tile=itile).values
-lon = ds_land['lon'].isel(tile=itile).values - 360
+if res == 'c48':
+    lat = ds_land['lat'].isel(tile=itile).values
+    lon = ds_land['lon'].isel(tile=itile).values - 360
+else:
+    lat = ds_land['lat'].isel(tile=itile).isel(time=0).values
+    lon = ds_land['lon'].isel(tile=itile).isel(time=0).values - 360
+
 land_mask = ds_land['SLMSKsfc'].isel(tile=itile).isel(time=0)
 
-da1 = prediction['column_integrated_Q2'].isel(tile=itile).mean('time')
-da2 = target['column_integrated_Q2'].isel(tile=itile).mean('time')
+field = 'column_integrated_Q2'
+da1 = prediction[field].isel(tile=itile).mean('time')
+da2 = target[field].isel(tile=itile).mean('time')
 
-vmax = 1
+if res == 'c48':
+    vmax = 1
+else:
+    vmax = 10
 
 fig, ax = plt.subplots(1, 2, figsize=(12, 6), sharex=True, sharey=True)
 
@@ -154,9 +173,9 @@ plt.title('target')
 plt.xlim((lims[2], lims[3]))
 plt.ylim((lims[0], lims[1]))
 
-# plt.suptitle(f'{field} {units} over {n_day_analyzed} days', fontsize=20)
+plt.suptitle(f'{field}', fontsize=20)
 
-plt.savefig(f'map_test.png', bbox_inches='tight')
+plt.savefig(f'map_offline.png', bbox_inches='tight')
 plt.close()
 ########################################
 
