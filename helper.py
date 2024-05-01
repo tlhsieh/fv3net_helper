@@ -1,5 +1,22 @@
 import numpy as np
+import pandas as pd
 import xarray as xr
+
+def unstack_sample(da):
+    assert da.dims == ('_fv3net_sample',), 'da must have a single dimension _fv3net_sample'
+    dim_stacked = da.dims[0] # should be '_fv3net_sample'
+
+    dims = list(da.coords)
+    if dims == ['tile', 'time', 'x', 'y']:
+        dims = ['tile', 'time', 'y', 'x']
+    else:
+        print('Warming: unknown dims', dims)
+
+    multi_index = pd.MultiIndex.from_arrays([da[dim].values for dim in dims], names=dims)
+    da_multi_index = xr.DataArray(da.values, coords={dim_stacked: multi_index})
+    da_unstacked = da_multi_index.unstack(dim_stacked)
+
+    return da_unstacked
 
 def downsample(da, fac=2):
     return da[..., ::fac, ::fac]
