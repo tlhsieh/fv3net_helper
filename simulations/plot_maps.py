@@ -9,6 +9,9 @@ import xarray as xr
 import matplotlib.pyplot as plt
 import datetime
 plt.rcParams.update({'font.size': 16})
+## add path
+import sys
+sys.path.append('/ncrc/home2/Tsung-Lin.Hsieh/fv3net_helper')
 from helper import coarse_grain, latlon, crop
 
 def box(da):
@@ -35,13 +38,14 @@ itile = 4; lims = [34, 42, -124, -117] # CA-NV # to compare the first 5 days
 # itile = 4; lims = [12, 42, -134, -104] # CA-NV+
 
 expr_base = 'baseline_0129_40day'
-expr_ml = 'ml-corrected_0129_40day'; n_day_analyzed = 40 # number of days to calculate the mean over
+expr_ml = 'ml-corrected_01290300_6day_sfc1000'; n_day_analyzed = 6 # number of days to calculate the mean over
+# expr_ml = 'ml-corrected_0129_40day'; n_day_analyzed = 40 # number of days to calculate the mean over
 # expr_base = 'baseline_0225_6day'
 # expr_ml = 'ml-corrected_0225_6day'; n_day_analyzed = 6 # number of days to calculate the mean over
 # expr_base = 'baseline_0303_6day'
 # expr_ml = 'ml-corrected_0303_6day'; n_day_analyzed = 6 # number of days to calculate the mean over
 
-field = 'total_precipitation_rate'; vmax = 12; units = '[mm/day]'; zarrname = 'diags'; snapshot = False
+field = 'total_precipitation_rate'; vmax = 20; units = '[mm/day]'; zarrname = 'diags'; snapshot = False
 # field = 'snowd'; vmax = 1; units = '[m]'; zarrname = 'sfc_dt_atmos'; snapshot = True
 # # field = 'PRATEsfc'; vmax = 8; units = '[mm/day]'; zarrname = 'sfc_dt_atmos'; snapshot = False
 
@@ -60,13 +64,18 @@ if snapshot:
 else:
     if field == 'total_precipitation_rate':
         itrange = range(n_per_day*0, n_per_day*n_day_analyzed)
-        trange_full = ds_ml.time[itrange] # 2020, 1, 29, 3, 0
-        trange_half = ds_ml.time[itrange] - datetime.timedelta(minutes=90) # 2020, 1, 29, 1, 30
+        ## old ml_corrected_runs
+        # trange_full = ds_ml.time[itrange] # 2020, 1, 29, 3, 0
+        # trange_half = ds_ml.time[itrange] - datetime.timedelta(minutes=90) # 2020, 1, 29, 1, 30
+        ## new ml_corrected_runs
+        trange_half = ds_ml.time[itrange] # 2020, 1, 29, 1, 30
+        trange_full = ds_ml.time[itrange] + datetime.timedelta(minutes=90) # 2020, 1, 29, 3, 0
         trange_shield = trange_full
 
         da_base = ds_base[field].isel(tile=itile).sel(time=trange_half).mean('time')
         da_nudged = ds_nudged[field].isel(tile=itile).sel(time=trange_half).mean('time')
-        da_ml = ds_ml[field].isel(tile=itile).sel(time=trange_full).mean('time')
+        # da_ml = ds_ml[field].isel(tile=itile).sel(time=trange_full).mean('time') # old ml_corrected_runs
+        da_ml = ds_ml[field].isel(tile=itile).sel(time=trange_half).mean('time')
     else: # if field == 'PRATEsfc' or field == 'snowd':
         trange = ds_ml.time[n_per_day*0:n_per_day*n_day_analyzed]
         if field == 'snowd':
@@ -90,10 +99,14 @@ if snapshot:
     da_shield = da_shield.sel(time=tfinal)
 else:
     da_shield = da_shield.sel(time=trange_shield).mean('time')
-da_shield = coarse_grain(da_shield, 8)
+# da_shield = coarse_grain(da_shield, 8)
 
-lat = ds_land['lat'].isel(tile=itile).isel(time=0).values
-lon = ds_land['lon'].isel(tile=itile).isel(time=0).values - 360
+if 'time' in ds_land['lat'].dims:
+    lat = ds_land['lat'].isel(tile=itile).isel(time=0).values
+    lon = ds_land['lon'].isel(tile=itile).isel(time=0).values - 360
+else:
+    lat = ds_land['lat'].isel(tile=itile).values
+    lon = ds_land['lon'].isel(tile=itile).values - 360
 land_mask = ds_land['SLMSKsfc'].isel(tile=itile).isel(time=0)
 
 ######################## plot maps ########################
