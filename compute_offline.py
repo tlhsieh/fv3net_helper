@@ -2,6 +2,8 @@
 bash
 module load python/3.9
 source activate fv3net-image
+
+Complete settings in nudge-to-fine-stellar-workflow/configs/machine-learning/tq-testing-data_predict.yaml
 """
 
 ##### from workflows/diagnostics/fv3net/diagnostics/offline/compute.py
@@ -49,12 +51,25 @@ res = 'c384'
 # expr_root = '/scratch/cimes/hsiehtl/C48'
 # res = 'c48'
 
+model_tag = '_sfc1000_no0202-04_seed1'
+# model_tag = '_subsampleRatio0p015625_balanced'
+# model_tag = '_subsampleRatio0p015625_balanceddQ2'
+# model_tag = '_subsampleRatio0p015625_balanceddQ2v2'
+# model_tag = '_subsampleRatio0p015625_sfc100'
+# model_tag = '_subsampleRatio0p015625_sfc500'
+# model_tag = '_subsampleRatio0p015625'
+# model_tag = '_wna'
+# model_tag = '_wna_seed1'
+# model_tag = '_wus'
+# model_tag = '_subsampleRatio0p0009765625_balanced'
+# model_tag = '_subsampleRatio0p0009765625'
+
 class args: # this is a hack to replace the parser
     evaluation_grid = res
     data_yaml = f'{root}/configs/machine-learning/tq-testing-data_predict.yaml'
     catalog_path = f'{root}/configs/catalog.yaml'
-    model_path = f'{expr_root}/models_C384_subsampleRatio0p0009765625/tq-model' #i
-    output_path = f'{expr_root}/offline/test/tq-model' #i
+    model_path = f'{expr_root}/models{model_tag}/tq-model'
+    output_path = f'{expr_root}/offline/test/tq-model'
     n_jobs = -1
     snapshot_time = None
 ########################################
@@ -126,6 +141,7 @@ target = safe.get_variables(
 
 ##### plot maps
 import matplotlib.pyplot as plt
+plt.rcParams.update({'font.size': 16})
 from helper import coarse_grain, latlon, crop
 
 def box(da):
@@ -134,9 +150,9 @@ def box(da):
 ds_land = xr.open_zarr(f'{expr_root}/simulations/nudged/sfc_dt_atmos.zarr') # for land_mask
 
 # itile = 2; lims = [42, 52, -127, -117] # PNW # to compare the ratio between two mountains
-# itile = 2; lims = [42, 62, -135, -115] # PNW+
+itile = 2; lims = [42, 62, -135, -115] # PNW+
 # itile = 4; lims = [34, 42, -124, -117] # CA-NV # to compare the first 5 days
-itile = 4; lims = [12, 42, -134, -104] # CA-NV+
+# itile = 4; lims = [12, 42, -134, -104] # CA-NV+
 
 if res == 'c48':
     lat = ds_land['lat'].isel(tile=itile).values
@@ -147,25 +163,27 @@ else:
 
 land_mask = ds_land['SLMSKsfc'].isel(tile=itile).isel(time=0)
 
-field = 'column_integrated_Q2'
+# field = 'column_integrated_dQ1'
+field = 'column_integrated_dQ2'
+# field = 'water_vapor_path'
 da1 = prediction[field].isel(tile=itile).mean('time')
 da2 = target[field].isel(tile=itile).mean('time')
 
 if res == 'c48':
     vmax = 1
 else:
-    vmax = 10
+    vmax = 4
 
 fig, ax = plt.subplots(1, 2, figsize=(12, 6), sharex=True, sharey=True)
 
 plt.sca(ax[0])
-plt.pcolormesh(lon, lat, box(da1), vmin=0, vmax=vmax, cmap='Blues')
+plt.pcolormesh(lon, lat, box(da1), vmin=-vmax, vmax=vmax, cmap='BrBG')
 plt.colorbar()
 plt.contour(lon, lat, box(land_mask), levels=[0.5], colors='k')
 plt.title('prediction')
 
 plt.sca(ax[1])
-plt.pcolormesh(lon, lat, box(da2), vmin=0, vmax=vmax, cmap='Blues')
+plt.pcolormesh(lon, lat, box(da2), vmin=-vmax, vmax=vmax, cmap='BrBG')
 plt.colorbar()
 plt.contour(lon, lat, box(land_mask), levels=[0.5], colors='k')
 plt.title('target')
@@ -175,70 +193,5 @@ plt.ylim((lims[0], lims[1]))
 
 plt.suptitle(f'{field}', fontsize=20)
 
-plt.savefig(f'map_offline.png', bbox_inches='tight')
+plt.savefig(f'map_offline{model_tag}.png', bbox_inches='tight')
 plt.close()
-########################################
-
-# # save model senstivity figures- these exclude derived variables
-# fig_input_sensitivity = plot_input_sensitivity(model, ds_predicted, horizontal_dims)
-# if fig_input_sensitivity is not None:
-#     with fsspec.open(
-#         os.path.join(
-#             args.output_path, "model_sensitivity_figures", INPUT_SENSITIVITY
-#         ),
-#         "wb",
-#     ) as f:
-#         fig_input_sensitivity.savefig(f)
-
-# mapper = _get_data_mapper_if_exists(config)
-# if mapper is not None:
-#     snapshot_timestamp = (
-#         args.snapshot_time
-#         or sorted(getattr(config, "timesteps", list(mapper.keys())))[0]
-#     )
-#     snapshot_time = vcm.parse_datetime_from_str(snapshot_timestamp)
-
-#     ds_snapshot = select_snapshot(ds_predicted, snapshot_time)
-
-#     vertical_vars = [
-#         var for var in model.output_variables if is_3d(ds_snapshot[var])
-#     ]
-#     ds_snapshot = insert_column_integrated_vars(ds_snapshot, vertical_vars)
-#     predicted_vars = [
-#         var for var in ds_snapshot if "derivation" in ds_snapshot[var].dims
-#     ]
-
-#     # add snapshotted prediction to saved diags.nc
-#     ds_diagnostics = ds_diagnostics.merge(
-#         safe.get_variables(ds_snapshot, predicted_vars).rename(
-#             dict(
-#                 **{v: f"{v}_snapshot" for v in predicted_vars}, time="time_snapshot"
-#             )
-#         )
-#     )
-
-#     ds_transect = _get_transect(
-#         ds_snapshot, evaluation_grid, vertical_vars, config.ptop,
-#     )
-#     _write_nc(ds_transect, args.output_path, TRANSECT_NC_NAME)
-
-# ds_diagnostics = _add_derived_diagnostics(ds_diagnostics)
-
-# _write_nc(
-#     ds_diagnostics, args.output_path, DIAGS_NC_NAME,
-# )
-
-# # convert and output metrics json
-# metrics = {
-#     var: ds_scalar_metrics[var].item() for var in ds_scalar_metrics.data_vars
-# }
-# with fsspec.open(os.path.join(args.output_path, METRICS_JSON_NAME), "w") as f:
-#     json.dump(metrics, f, indent=4)
-
-# metadata = {}
-# metadata["model_path"] = args.model_path
-# metadata["data_config"] = dataclasses.asdict(config)
-# with fsspec.open(os.path.join(args.output_path, METADATA_JSON_NAME), "w") as f:
-#     json.dump(metadata, f, indent=4)
-
-# # logger.info(f"Finished processing dataset diagnostics and metrics.")

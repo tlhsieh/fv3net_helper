@@ -72,7 +72,7 @@ da_base = da_base*86400
 da_nudged = da_nudged*86400
 da_ml = da_ml*86400
 
-############## new code from here ##############
+############## calculate PDF ##############
 ## old ml_corrected_runs
 # n_time = 8 # since nudged is instantaneous, we need to average it
 # da_base = da_base.rolling(time=n_time).mean()[n_time-1::n_time]

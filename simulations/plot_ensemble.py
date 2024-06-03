@@ -73,17 +73,17 @@ exprs_base = {
     # 'baseline_0303_6day': 6, 
     }
     
-exprs_ml = {
-    'ml-corrected_0129_6day_wna': 6,
-    'ml-corrected_0129_6day_wna_seed1': 6,
-    'ml-corrected_0129_6day_wna_seed2': 6,
-    'ml-corrected_0129_6day_wna_seed3': 6,
-    'ml-corrected_01291200_6day_wna_seed1': 6,
-    'ml-corrected_01291200_6day_wna_seed2': 6,
-    'ml-corrected_01291200_6day_wna_seed3': 10,
-    'ml-corrected_0130_6day_wna': 6,
-    'ml-corrected_0131_6day_wna': 6,
-    }
+# exprs_ml = {
+#     'ml-corrected_0129_6day_wna': 6,
+#     'ml-corrected_0129_6day_wna_seed1': 6,
+#     'ml-corrected_0129_6day_wna_seed2': 6,
+#     'ml-corrected_0129_6day_wna_seed3': 6,
+#     'ml-corrected_01291200_6day_wna_seed1': 6,
+#     'ml-corrected_01291200_6day_wna_seed2': 6,
+#     'ml-corrected_01291200_6day_wna_seed3': 10,
+#     'ml-corrected_0130_6day_wna': 6,
+#     'ml-corrected_0131_6day_wna': 6,
+#     }
     
 # exprs_ml = {
 #     'ml-corrected_0129_6day_sfc1000': 6,
@@ -92,11 +92,12 @@ exprs_ml = {
 #     'ml-corrected_01290900_6day_sfc1000': 10,
 #     }
     
-# exprs_ml = {
-#     'ml-corrected_0129_sfc1000_no0202-04_seed1': 6,
-#     'ml-corrected_0129_sfc1000_no0202-04_seed2': 6,
-#     'ml-corrected_0129_sfc1000_no0202-04_seed3': 6,
-#     }
+exprs_ml = {
+    'ml-corrected_0129_6day_sfc1000': 6,
+    'ml-corrected_0129_sfc1000_no0202-04_seed1': 6,
+    'ml-corrected_0129_sfc1000_no0202-04_seed2': 6,
+    'ml-corrected_0129_sfc1000_no0202-04_seed3': 6,
+    }
 
 field = 'total_precipitation_rate'; units = '[mm/day]'; zarrname = 'diags'
 # field = 'snowd'; units = '[m]'; zarrname = 'sfc_dt_atmos'
