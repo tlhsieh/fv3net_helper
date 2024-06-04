@@ -194,6 +194,7 @@ if __name__ == '__main__':
     # tag_source = 'noSubsampling'
     
     # tag_target = 'subsampleRatio0p015625'
+
     # tag_output = 'subsampleRatio0p015625_balanced'
     # tag_output = 'subsampleRatio0p015625_balanceddQ2'
     # tag_output = 'subsampleRatio0p015625_balanceddQ2v2'
@@ -204,6 +205,7 @@ if __name__ == '__main__':
     # tag_output = 'sfc1000'; surface_height_threshold = 1000
 
     # tag_target = 'subsampleRatio0p0009765625'
+    
     # tag_output = 'subsampleRatio0p0009765625_balanced'
     # tag_output = 'subsampleRatio0p0009765625_wna'
 
